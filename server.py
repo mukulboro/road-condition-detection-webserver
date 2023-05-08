@@ -9,9 +9,15 @@ from PIL import Image
 from io import BytesIO
 import os
 import uuid
-
+from pydantic import BaseModel
 
 OUT_PATH="out_images"
+
+class post_format(BaseModel):
+    longitude:float
+    latitude :float
+    username:str
+    image_string:str
 
 app = FastAPI()
 
@@ -21,7 +27,7 @@ async def health():
 
 
 @app.post("/post")
-def post_details(longitude:float,latitude :float,username:str,image_string:str):
+def post_details(info:post_format):
 
     """
     ROUTE TO POST IMAGE ALONG WITH LONGITUDE,LATITUDE
@@ -35,14 +41,14 @@ def post_details(longitude:float,latitude :float,username:str,image_string:str):
 
     #dictionary
     given_info= {}
-    given_info['posted_by']=username
-    given_info['longitude']=longitude
-    given_info['latitude']=latitude
+    given_info['posted_by']=info.username
+    given_info['longitude']=info.longitude
+    given_info['latitude']=info.latitude
     given_info['uploaded_date']=current_date
     given_info['uploaded_time']=current_time
     given_info['image_name']=image_name
     #PIL Image
-    img_details = predict(image_string, output_path=os.path.join(OUT_PATH, image_name))
+    img_details = predict(info.image_string, output_path=os.path.join(OUT_PATH, image_name))
 
     given_info['is_paved']=img_details["isPaved"]
     given_info['is_unpaved']=img_details["isUnpaved"]
