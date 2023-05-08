@@ -10,6 +10,7 @@ from io import BytesIO
 import os
 import uuid
 
+
 OUT_PATH="out_images"
 
 app = FastAPI()
@@ -53,11 +54,13 @@ def post_details(longitude:float,latitude :float,username:str,image_string:str):
     return img_details
     
 
-@app.get("/road_info")
-def get_users_info():
-    """ROUTE TO RECEIVE REQUIRED DATA"""
-    #under construction 
-    return ":("
+@app.get("/nearby_road_coordinates")
+def get_users_info(longitude:float,latitude:float):
+    """
+    ROUTE TO RECEIVE NEARBY COORDINATE
+    """
+
+    return database.db.nearby_coordinates(longitude,latitude)
 
 
 @app.get("/view-image/{image_name}")
@@ -65,9 +68,9 @@ def get_image(image_name:str):
     """
     SERVES IMAGE WHEN GIVEN IMAGE NAME
     """
-    for image in os.listdir(saved_img_directory):
+    for image in os.listdir(OUT_PATH):
         if (image==image_name):
-            return FileResponse(saved_img_directory+"/"+image_name)
+            return FileResponse(OUT_PATH+"/"+image_name)
     return (f"{image_name} doesnot exists")
 
 
