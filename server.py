@@ -3,13 +3,14 @@ from fastapi.responses import RedirectResponse,FileResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import date,datetime
 import database.db
+import model.pred
 import base64
 from PIL import Image
 from io import BytesIO
 import os
 import uuid
 
-saved_img_directory="D:/img"
+OUT_PATH="out_images"
 
 app = FastAPI()
 
@@ -32,21 +33,24 @@ def post_details(longitude:float,latitude :float,username:str,image_string:str):
     image_name=str(uuid.uuid4())+".jpg"
 
     #dictionary
-    given_info={}
+    given_info= {}
     given_info['posted_by']=username
     given_info['longitude']=longitude
     given_info['latitude']=latitude
     given_info['uploaded_date']=current_date
     given_info['uploaded_time']=current_time
     given_info['image_name']=image_name
-    database.db.add_details(given_info)
-
     #PIL Image
-    img=decode_img(image_string)
+    img_details = predict(image_string, output_path=os.path.join(OUT_PATH, image_name))
 
-    img.save(saved_img_directory+"/"+image_name)
+    given_info['is_paved']=img_details["isPaved"]
+    given_info['is_unpaved']=img_details["isUnpaved"]
+    given_info['no_of_cracks']=img_details["totalPotholes"]
+    given_info['no_of_potholes']=img_details["totalCracks"]
+
+    database.db.add_details(given_info)
     
-    return "done"
+    return img_details
     
 
 @app.get("/road_info")
@@ -72,10 +76,17 @@ def return_list(username):
     return database.db.return_image(username)
     
 
-def decode_img(image_s):
-    decoded_img_bytes=base64.b64decode(image_s)
+def predict(image_s:str, output_path):
+    image_s = image_s.rstrip().lstrip()
+    image_s = image_s.split(",")
+    try:
+        image_s = image_s[1]
+    except IndexError:
+        image_s = image_s[0]
+    decoded_img_bytes=base64.urlsafe_b64decode(image_s)
     decoded_image=BytesIO(decoded_img_bytes)
     img=Image.open(decoded_image)
-    #img.show()
-    return img 
+    img_details = model.pred.get_prediction(image=img, output_path=output_path)
+    return img_details
+
     
