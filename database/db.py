@@ -1,10 +1,19 @@
 import pymongo
 from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 import math
 
-client=MongoClient()
+uri = "mongodb+srv://bigyadhungana:e8H9t3w8tHpr0XWo@sadakvision.txhvkln.mongodb.net/?retryWrites=true&w=majority"
+
+client=MongoClient(uri,server_api=ServerApi('1'))
 db=client['SadakVision']
-data_collection=db['test']
+data_collection=db['data']
+
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
 
 def add_details(details :dict ):
         data_collection.insert_one(details)
@@ -28,5 +37,3 @@ def return_image(username):
         for img in img_list:
                 final_list.append(img['image_name'])
         return final_list
-
-          
