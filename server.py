@@ -9,8 +9,15 @@ from PIL import Image
 from io import BytesIO
 import os
 import uuid
+from pydantic import BaseModel
 
 OUT_PATH="out_images"
+
+class post_format(BaseModel):
+    longitude:float
+    latitude :float
+    username:str
+    image_string:str
 
 app = FastAPI()
 
@@ -20,7 +27,7 @@ async def health():
 
 
 @app.post("/post")
-def post_details(longitude:float,latitude :float,username:str,image_string:str):
+def post_details(info:post_format):
 
     """
     ROUTE TO POST IMAGE ALONG WITH LONGITUDE,LATITUDE
@@ -34,30 +41,32 @@ def post_details(longitude:float,latitude :float,username:str,image_string:str):
 
     #dictionary
     given_info= {}
-    given_info['posted_by']=username
-    given_info['longitude']=longitude
-    given_info['latitude']=latitude
+    given_info['posted_by']=info.username
+    given_info['longitude']=info.longitude
+    given_info['latitude']=info.latitude
     given_info['uploaded_date']=current_date
     given_info['uploaded_time']=current_time
     given_info['image_name']=image_name
     #PIL Image
-    img_details = predict(image_string, output_path=os.path.join(OUT_PATH, image_name))
+    img_details = predict(info.image_string, output_path=os.path.join(OUT_PATH, image_name))
 
     given_info['is_paved']=img_details["isPaved"]
     given_info['is_unpaved']=img_details["isUnpaved"]
-    given_info['no_of_cracks']=img_details["totalPotholes"]
-    given_info['no_of_potholes']=img_details["totalCracks"]
+    given_info['no_of_cracks']=img_details["totalCracks"]
+    given_info['no_of_potholes']=img_details["totalPotholes"]
 
     database.db.add_details(given_info)
     
     return img_details
     
 
-@app.get("/road_info")
-def get_users_info():
-    """ROUTE TO RECEIVE REQUIRED DATA"""
-    #under construction 
-    return ":("
+@app.get("/nearby_road_coordinates")
+def get_users_info(longitude:float,latitude:float):
+    """
+    ROUTE TO RECEIVE NEARBY COORDINATE
+    """
+
+    return database.db.nearby_coordinates(longitude,latitude)
 
 
 @app.get("/view-image/{image_name}")
@@ -65,15 +74,18 @@ def get_image(image_name:str):
     """
     SERVES IMAGE WHEN GIVEN IMAGE NAME
     """
-    for image in os.listdir(saved_img_directory):
+    for image in os.listdir(OUT_PATH):
         if (image==image_name):
-            return FileResponse(saved_img_directory+"/"+image_name)
+            return FileResponse(OUT_PATH+"/"+image_name)
     return (f"{image_name} doesnot exists")
 
 
 @app.get("/get_user_contibutions")
 def return_list(username):
-    return database.db.return_image(username)
+    contributions= database.db.return_image(username)
+    if len(contributions)==0:
+        return ["zero.jpg"]
+    return contributions
     
 
 def predict(image_s:str, output_path):
