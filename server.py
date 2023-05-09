@@ -52,8 +52,8 @@ def post_details(info:post_format):
 
     given_info['is_paved']=img_details["isPaved"]
     given_info['is_unpaved']=img_details["isUnpaved"]
-    given_info['no_of_cracks']=img_details["totalPotholes"]
-    given_info['no_of_potholes']=img_details["totalCracks"]
+    given_info['no_of_cracks']=img_details["totalCracks"]
+    given_info['no_of_potholes']=img_details["totalPotholes"]
 
     database.db.add_details(given_info)
     
@@ -82,7 +82,10 @@ def get_image(image_name:str):
 
 @app.get("/get_user_contibutions")
 def return_list(username):
-    return database.db.return_image(username)
+    contributions= database.db.return_image(username)
+    if len(contributions)==0:
+        return ["zero.jpg"]
+    return contributions
     
 
 def predict(image_s:str, output_path):
