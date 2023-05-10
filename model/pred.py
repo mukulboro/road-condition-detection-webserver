@@ -11,17 +11,15 @@ MODEL_PATH = os.path.join(CURRENT_PATH, "model.pt")
 model = YOLO(MODEL_PATH)
 
 def get_rectangle_color(class_name:str):
-    match class_name:
-        case "paved":
-            return (255,0,0) # RED
-        case "unpaved":
-            return (0,255,0) # GREEN
-        case "pothole":
-            return (0,0,225) # BLUE
-        case "crack":
-            return (255,0,255) # PURPLE
-        case _:
-            return (0,0,0)
+    if class_name == "paved":
+        return (255,0,0) # RED
+    if class_name == "unpaved":
+        return (0,255,0) # GREEN
+    if class_name == "pothole":
+        return (0,0,225) # BLUE
+    if class_name == "crack":
+        return (255,0,255) # PURPLE
+    return (0,0,0)
 
 def get_model_predictions(result:ultralytics.yolo.engine.results.Results):
     class_names = ["paved", "unpaved", "pothole", "crack", ""]
